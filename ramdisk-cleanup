@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#Check if there are any ramdisks to clean
+if [ ! -f ~/.ramdisk ]; then
+	echo Nothing to clean
+	exit 1
+fi
+
+while true
+do
+	echo "Items available for cleanup:"
+
+	#List names of Folders in ramdisk history
+	while read p
+	do
+		basename "$(grep "$p" ~/.ramdisk)"
+	done < ~/.ramdisk
+
+	read -p "Which ramdisk to clean? " TARGET
+
+	#Get full path from ramdisk history
+	FILEPATH=$(grep "$TARGET" ~/.ramdisk)
+
+	echo will clean \"$TARGET\" at path \"$FILEPATH\"
+	read -p "Is this OK? [y/n] " yn
+	case $yn in
+		[Yy]* ) break;;
+		[Nn]* ) ;;
+		* ) echo "Please answer yes or no.";;
+	esac
+done
+
+#Remove contents of ramdisk folder
+sudo rm -rf /ramdisk/"$TARGET"/*
+
+#Unmount ramdisk folder
+sudo umount /ramdisk/"$TARGET"
+
+#get rid of link
+rm "$FILEPATH"
+
+#rename original
+mv "$FILEPATH"_ORIG "$FILEPATH"
+
+#remove ramdisk from history
+echo "$(grep -v "$FILEPATH" ~/.ramdisk)" > ~/.ramdisk
+
+echo "DONE"

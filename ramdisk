@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#Check if path is not specified, not a full path or help requested. Print help and exit
+if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ "$(echo "$1" | cut -c 1)" != "/" ]
+then
+    echo "USAGE: ramdisk [PATH] [BUFFER]"
+    echo ""
+    echo "  PATH: The location of the file/folder. Must be a FULL PATH"
+    echo "BUFFER: Specify number of Megabytes larger to make ramdisk (default 1)"
+    echo ""
+    echo "EXAMPLE: ramdisk /home/user/Documents/FILE.txt 120"
+    echo "Will put FILE.txt into a ramdisk with a 120MB buffer size"
+    exit 3
+fi
+
+#Check if buffer size specified
+if [ -z "$2" ]
+then
+	#if not, set to 1MB
+	BUFFER=1000
+else
+	BUFFER=$(( $2 * 1000 ))
+fi
+
+#Get size of file/folder in kilobytes
+SIZE=$((`du -sk "$1" | cut -f1` + $BUFFER))
+
+#Get available RAM in kilobytes
+RAM=$(cat /proc/meminfo | grep MemAvailable | tr -dc '0-9')
+
+#Get name of file/folder in path
+NAME=$(basename "$1")
+
+#Remove trailing "/" from path
+FILEPATH="${1%/}"
+
+#Is there enough RAM?
+if [ "$SIZE" -gt "$RAM" ]
+then
+	echo "NOT ENOUGH RAM!"
+	echo Avail"  |" $(( $RAM / 1000 ))MB
+        echo Used"   |" $(( $SIZE / 1000 ))MB
+	echo Needed" |" $(( $(($SIZE - $RAM)) / 1000 ))MB
+	exit 1
+else
+	echo Creating ramdisk for \"$NAME\"
+	echo At path \"$FILEPATH\"
+	echo With buffer of $(($BUFFER / 1000))MB
+	echo Avail" |" $(( $RAM / 1000 ))MB
+	echo Used"  |" $(( $SIZE / 1000 ))MB
+	echo Free"  |" $(( $(($RAM - $SIZE)) / 1000 ))MB
+	read -p "Is this OK? [y/n] " yn
+	case $yn in
+		[Yy]* ) ;;
+		[Nn]* ) exit 2;;
+		* ) echo "Please answer yes or no.";;
+	esac
+
+fi
+
+#Store path for ramdisk-cleanup
+echo "$FILEPATH" >> ~/.ramdisk
+
+#Create /ramdisk folder if it doesn't exist
+if [ ! -d /ramdisk ]
+then
+	sudo mkdir /ramdisk
+fi
+
+#Create folder for the ramdisk
+sudo mkdir /ramdisk/"$NAME"
+
+#Create the ramdisk for real
+sudo mount -t tmpfs -o size="$SIZE"K tmpfs /ramdisk/"$NAME"
+
+#Make sure it's owned by the current user
+sudo chown -R $USER /ramdisk
+
+#Copy file/s to the ramdisk
+echo "Copying..."
+cp -a "$FILEPATH" /ramdisk/"$NAME"/
+
+#Rename the original file/folder
+mv "$FILEPATH" "$FILEPATH"_ORIG
+
+#Create link to ramdisk with original name
+ln -s /ramdisk/"$NAME"/"$NAME" "$FILEPATH"
+
+echo "DONE"
