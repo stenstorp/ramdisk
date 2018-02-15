@@ -1,40 +1,67 @@
 #!/bin/bash
 
+RAMDISK=/tmp/ramdisk
+
 #Check if there are any ramdisks to clean
 if [ ! -f ~/.ramdisk ]; then
 	echo Nothing to clean
 	exit 1
 fi
 
-while true
-do
-	echo "Items available for cleanup:"
+if [ "$1" == -h ] || [ "$1" == --help ]
+then
+	echo "USAGE: ramdisk-cleanup (NAME)"
+	echo ""
+	echo "NAME: name of ramdisk (optional)"
+	exit 3
+fi
 
-	#List names of Folders in ramdisk history
-	while read p
-	do
-		basename "$(grep "$p" ~/.ramdisk)"
-	done < ~/.ramdisk
+if [ -z "$1" ]
+then
+		echo "Items available for cleanup:"
 
-	read -p "Which ramdisk to clean? " TARGET
+		#List names of Folders in ramdisk history
+		while read p
+		do
+			basename "$(grep "$p" ~/.ramdisk)"
+		done < ~/.ramdisk
 
-	#Get full path from ramdisk history
-	FILEPATH=$(grep "$TARGET" ~/.ramdisk)
+		read -p "Which ramdisk to clean? " TARGET
+else
+	TARGET="$1"
+fi
 
-	echo will clean \"$TARGET\" at path \"$FILEPATH\"
-	read -p "Is this OK? [y/n] " yn
-	case $yn in
-		[Yy]* ) break;;
-		[Nn]* ) ;;
-		* ) echo "Please answer yes or no.";;
-	esac
-done
+#Get full path from ramdisk history
+FILEPATH=$(grep "$TARGET" ~/.ramdisk)
+
+if [ -z "$FILEPATH" ]
+then
+	echo ramdisk \"$TARGET\" does not exist!
+	exit 1
+fi
+
+echo will clean \"$TARGET\" at path \"$FILEPATH\"
+read -p "Is this OK? [y/n] " yn
+case $yn in
+	[Yy]* ) ;;
+	[Nn]* ) exit 3;;
+	* ) echo "Please answer yes or no.";;
+esac
+
+echo copy changes to ramdisk to storage?
+read -p "[y/n] " yn
+case $yn in
+	[Yy]* ) rsync -a "$RAMDISK"/"$TARGET"/"$TARGET"/* "$FILEPATH"_ORIG;;
+	[Nn]* ) ;;
+	* ) echo "Please answer yes or no.";;
+esac
 
 #Remove contents of ramdisk folder
-sudo rm -rf /ramdisk/"$TARGET"/*
+rm -rf "$RAMDISK"/"$TARGET"/*
 
 #Unmount ramdisk folder
-sudo umount /ramdisk/"$TARGET"
+umount "$RAMDISK"/"$TARGET"/
+rmdir "$RAMDISK"/"$TARGET"
 
 #get rid of link
 rm "$FILEPATH"

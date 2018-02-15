@@ -1,5 +1,7 @@
 #!/bin/bash
 
+RAMDISK=/tmp/ramdisk
+
 #Check if path is not specified, not a full path or help requested. Print help and exit
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ "$(echo "$1" | cut -c 1)" != "/" ]
 then
@@ -62,28 +64,28 @@ fi
 echo "$FILEPATH" >> ~/.ramdisk
 
 #Create /ramdisk folder if it doesn't exist
-if [ ! -d /ramdisk ]
+if [ ! -d "$RAMDISK" ]
 then
-	sudo mkdir /ramdisk
+	mkdir "$RAMDISK"
 fi
 
 #Create folder for the ramdisk
-sudo mkdir /ramdisk/"$NAME"
+mkdir "$RAMDISK"/"$NAME"
 
 #Create the ramdisk for real
-sudo mount -t tmpfs -o size="$SIZE"K tmpfs /ramdisk/"$NAME"
+mount -t tmpfs -o size="$SIZE"K tmpfs "$RAMDISK"/"$NAME"
 
 #Make sure it's owned by the current user
-sudo chown -R $USER /ramdisk
+chown -R $USER "$RAMDISK"
 
 #Copy file/s to the ramdisk
 echo "Copying..."
-cp -a "$FILEPATH" /ramdisk/"$NAME"/
+cp -a "$FILEPATH" "$RAMDISK"/"$NAME"/
 
 #Rename the original file/folder
 mv "$FILEPATH" "$FILEPATH"_ORIG
 
 #Create link to ramdisk with original name
-ln -s /ramdisk/"$NAME"/"$NAME" "$FILEPATH"
+ln -s "$RAMDISK"/"$NAME"/"$NAME" "$FILEPATH"
 
 echo "DONE"
