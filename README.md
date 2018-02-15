@@ -3,8 +3,6 @@ Easily create and remove ramdisks for files and folders seamlessly on Linux
 
 Ramdisk-cleanup removes selected ramdisk/s, restoring the original file structure
 
-## WARNING!!
-Ramdisk and ramdisk-cleanup do not support restoring files from the ramdisk to permanent storage! After running ramdisk-cleanup, ALL CHANGES WILL BE DESTROYED!!
 
 ## Ramdisk
 
@@ -24,10 +22,10 @@ This will put "FunGame" into a ramdisk with 150MB of free space to account for f
 ## Ramdisk-cleanup
 
 Ramdisk-cleanup removes selected ramdisk/s, restoring the original file structure.
-Ramdisk-cleanup (currently) does not take arguments
 
 USAGE: \
-ramdisk-cleanup
+ramdisk-cleanup (NAME)
+NAME: Name of the ramdisk to clean 
 
 You will be prompted to type/copy the name of the ramdisk you want to remove.
 
