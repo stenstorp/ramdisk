@@ -24,7 +24,7 @@ This will put "FunGame" into a ramdisk with 150MB of free space to account for f
 Ramdisk-cleanup removes selected ramdisk/s, restoring the original file structure.
 
 USAGE: \
-ramdisk-cleanup (NAME)
+ramdisk-cleanup (NAME) \
 NAME: Name of the ramdisk to clean 
 
 You will be prompted to type/copy the name of the ramdisk you want to remove.
